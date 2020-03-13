@@ -4,6 +4,6 @@
 ### Own
 
 PointCloudV1 (100 Fine, 100 Defect):
-https://www.kaggle.com/kasperschonhenriksen/pointcloudv1/settings
+www.kaggle.com/dataset/e54a726bc0a9f901e560eac2e2a71f9eca015dabd4a42663d20f5c021a3b3f1d
 
 ### Others
