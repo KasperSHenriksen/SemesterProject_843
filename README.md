@@ -1,6 +1,6 @@
 # SemesterProject_843
 
-## Pipieline
+## Pipeline
 ### 1) Generate dataset through Unity
 Add text here..
 
