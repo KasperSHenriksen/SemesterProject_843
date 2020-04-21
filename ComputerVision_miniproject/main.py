@@ -8,6 +8,8 @@ from model import DGCNN
 from torch.utils.data import DataLoader
 import torch.optim as optim
 import torch.nn as nn
+import torch
+from data import ModelNet40
 
 NUM_CLASS = 40
 EMB_DIMS = 1024
@@ -36,7 +38,7 @@ def train():
     criterion = nn.CrossEntropyLoss
 
     for epoch in range(EPOCHS):
-        scheduler.step()        
+        scheduler.step()
 
         train_loss = 0.0
         count = 0.0
@@ -45,13 +47,16 @@ def train():
         train_pred = []
         train_true = []
 
-        for data, label in train_loader():
+        for data, label in train_loader:
             data, label = data.to(device), label.to(device).squeeze()
-            
+
             print(f'Before: {data}')
 
             data = data.permute(0,2,1)
-            
-            print(f'After: {data')
 
-            batch_size = data.size()[]
+            print(f'After: {data}')
+
+            #batch_size = data.size()[]
+
+if __name__ == "__main__":
+    train()

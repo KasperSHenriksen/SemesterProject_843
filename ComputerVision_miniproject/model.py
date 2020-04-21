@@ -7,45 +7,45 @@ def knn(x, k):
     xx = torch.sum(data**2,dim=1,keepdim=True)
     pairwise_distance = -xx - inner - xx.transpose(2,1)
 
-    idx = pairwise_distance.topk(k=k, dim-1)[1]
+    idx = pairwise_distance.topk(k=k, dim=-1)[1]
     return idx
 
 def get_graph_feature(data, k=20, idx=None):
-    
+
     batch_size = data.size(0)
     num_points = data.size(2)
-    
-    #Selecting part of the data 
+
+    #Selecting part of the data
     data = data.view(batch_size, -1, num_points)
-    
+
     if idx is None:
         #Run knn to specify indexing
-        idx = knn(data, k=k) 
+        idx = knn(data, k=k)
     device = torch.device('cuda')
-    
-    #Arange returns a 1-D tensor of size: batch_size,  
+
+    #Arange returns a 1-D tensor of size: batch_size,
     idx_base = torch.arange(0, batch_size, device=device).view(-1, 1, 1)*num_points
     idx = idx + idx_base
 
     idx = idx.view(-1)
- 
+
     _, num_dims, _ = data.size()
 
     data = data.transpose(2, 1).contiguous()   # (batch_size, num_points, num_dims)  -> (batch_size*num_points, num_dims) #   batch_size * num_points * k + range(0, batch_size*num_points)
     feature = data.view(batch_size*num_points, -1)[idx, :]
-    feature = feature.view(batch_size, num_points, k, num_dims) 
+    feature = feature.view(batch_size, num_points, k, num_dims)
     data = data.view(batch_size, num_points, 1, num_dims).repeat(1, 1, k, 1)
-    
+
     feature = torch.cat((feature-data, data), dim=3).permute(0, 3, 1, 2).contiguous()
-  
+
     return feature
-   
+
 
 
 class DGCNN(nn.Module):
-    def __init__(self, numClass=40, emb_dims, dropout_rate, batch_size, k):
+    def __init__(self, numClass, emb_dims, dropout_rate, batch_size, k):
         super(DGCNN,self).__init__() #Runs the init of the base class, which enables functions to be utilized from this class.
-        
+
         #Arguments:
         self.emb_dims = emb_dims
         self.dropout_rate = dropout_rate
@@ -53,26 +53,26 @@ class DGCNN(nn.Module):
         self.k = k
 
         #Conv Layers
-        self.conv1 = nn.Seqeuential(nn.Conv2d(6,64,kernel_size=1,bias=False),
-                                    nn.BatchNorm2d(64), 
+        self.conv1 = nn.Sequential(nn.Conv2d(6,64,kernel_size=1,bias=False),
+                                    nn.BatchNorm2d(64),
                                     nn.LeakyReLU(negative_slope=0.2))
 
-        self.conv2 = nn.Seqeuential(nn.Conv2d(64*2,64,kernel_size=1,bias=False),
-                                    nn.BatchNorm2d(64), 
+        self.conv2 = nn.Sequential(nn.Conv2d(64*2,64,kernel_size=1,bias=False),
+                                    nn.BatchNorm2d(64),
                                     nn.LeakyReLU(negative_slope=0.2))
 
-        self.conv3 = nn.Seqeuential(nn.Conv2d(64*2,128,kernel_size=1,bias=False),
-                                    nn.BatchNorm2d(128), 
+        self.conv3 = nn.Sequential(nn.Conv2d(64*2,128,kernel_size=1,bias=False),
+                                    nn.BatchNorm2d(128),
                                     nn.LeakyReLU(negative_slope=0.2))
 
-        self.conv4 = nn.Seqeuential(nn.Conv2d(128*2,256,kernel_size=1,bias=False),
-                                    nn.BatchNorm2d(256), 
+        self.conv4 = nn.Sequential(nn.Conv2d(128*2,256,kernel_size=1,bias=False),
+                                    nn.BatchNorm2d(256),
                                     nn.LeakyReLU(negative_slope=0.2))
-                                    
-        self.conv5 = nn.Seqeuential(nn.Conv1d(512,self.emb_dims,kernel_size=1,bias=False),
-                                    nn.BatchNorm1d(self.emb_dims), 
-                                    nn.LeakyReLU(negative_slope=0.2))                                                             
-        
+
+        self.conv5 = nn.Sequential(nn.Conv1d(512,self.emb_dims,kernel_size=1,bias=False),
+                                    nn.BatchNorm1d(self.emb_dims),
+                                    nn.LeakyReLU(negative_slope=0.2))
+
         #Fully Connected layers| Linear == Fully connected
         self.fc1 = nn.Linear(self.emb_dims*2,512,bias=False)
         self.fc2 = nn.Linear(512,256)
@@ -81,24 +81,24 @@ class DGCNN(nn.Module):
         #BatchNorm layers
         self.bn1 = nn.BatchNorm1d(512) #Note: bn6 in their code
         self.bn2 = nn.BatchNorm1d(256) #Note: bn2 in their code
-        
+
         #Dropout Layers
         self.dp1 = nn.Dropout(self.dropout_rate)
         self.dp2 = nn.Dropout(self.dropout_rate)
 
-        
-        
+
+
     def forward(self, data):
         batch_size = data.size(0)
         #EdgeConv1
-        data = get_graph_feature(data, k=self.k)    # (batch_size, 3, num_points) -> (batch_size, 3*2, num_points, k)       
+        data = get_graph_feature(data, k=self.k)    # (batch_size, 3, num_points) -> (batch_size, 3*2, num_points, k)
         data = self.conv1(data)                     # (batch_size, 3*2, num_points, k) -> (batch_size, 64, num_points, k)
         data1= data.max(dim=-1, keepdim=False)[0]   # (batch_size, 64, num_points, k) -> (batch_size, 64, num_points)
 
         #EdgeConv2
         data = get_graph_feature(data1, k=self.k)   # (batch_size, 64, num_points) -> (batch_size, 64*2, num_points, k)
         data = self.conv2(data)
-        data2= data.max(dim=-1, keepdim=False)[0]        
+        data2= data.max(dim=-1, keepdim=False)[0]
 
         #EdgeConv3
         data = get_graph_feature(data2, k=self.k)
@@ -129,4 +129,4 @@ class DGCNN(nn.Module):
 
         data = self.fc3(data)
 
-        return data        
+        return data
