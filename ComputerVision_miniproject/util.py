@@ -1,3 +1,6 @@
+import torch
+import torch.nn.functional as F 
+
 def cal_loss(pred, gold, smoothing=True):
     ''' Calculate cross entropy loss, apply label smoothing if needed. '''
 

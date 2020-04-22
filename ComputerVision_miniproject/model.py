@@ -1,8 +1,9 @@
 #Archiecture of DGCNN: https://github.com/WangYueFt/dgcnn/blob/master/pytorch/model.py
 import torch
 import torch.nn as nn
+import torch.nn.functional as F 
 
-def knn(x, k):
+def knn(data, k):
     inner = -2*torch.matmul(data.transpose(2,1),data)
     xx = torch.sum(data**2,dim=1,keepdim=True)
     pairwise_distance = -xx - inner - xx.transpose(2,1)
