@@ -55,8 +55,9 @@ class DGCNN(nn.Module):
 
         #Conv Layers
         self.conv1 = nn.Sequential(nn.Conv2d(6,64,kernel_size=1,bias=False),
-                                    nn.BatchNorm2d(64),
+                                    nn.BatchNorm2d(64), 
                                     nn.LeakyReLU(negative_slope=0.2))
+
 
         self.conv2 = nn.Sequential(nn.Conv2d(64*2,64,kernel_size=1,bias=False),
                                     nn.BatchNorm2d(64),
@@ -91,6 +92,7 @@ class DGCNN(nn.Module):
 
     def forward(self, data):
         batch_size = data.size(0)
+
         #EdgeConv1
         data = get_graph_feature(data, k=self.k)    # (batch_size, 3, num_points) -> (batch_size, 3*2, num_points, k)
         data = self.conv1(data)                     # (batch_size, 3*2, num_points, k) -> (batch_size, 64, num_points, k)

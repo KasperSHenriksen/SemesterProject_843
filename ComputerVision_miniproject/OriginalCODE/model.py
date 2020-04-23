@@ -55,6 +55,7 @@ def get_graph_feature(x, k=20, idx=None):
 
 class PointNet(nn.Module):
     def __init__(self, args, output_channels=40):
+        
         super(PointNet, self).__init__()
         self.args = args
         self.conv1 = nn.Conv1d(3, 64, kernel_size=1, bias=False)
