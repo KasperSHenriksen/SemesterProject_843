@@ -94,12 +94,12 @@ class DGCNN(nn.Module):
         batch_size = data.size(0)
 
         #EdgeConv1
-        data = get_graph_feature(data, k=self.k)    # (batch_size, 3, num_points) -> (batch_size, 3*2, num_points, k)
-        data = self.conv1(data)                     # (batch_size, 3*2, num_points, k) -> (batch_size, 64, num_points, k)
-        data1= data.max(dim=-1, keepdim=False)[0]   # (batch_size, 64, num_points, k) -> (batch_size, 64, num_points)
+        data = get_graph_feature(data, k=self.k)   
+        data = self.conv1(data)                     
+        data1= data.max(dim=-1, keepdim=False)[0]  
 
         #EdgeConv2
-        data = get_graph_feature(data1, k=self.k)   # (batch_size, 64, num_points) -> (batch_size, 64*2, num_points, k)
+        data = get_graph_feature(data1, k=self.k)   
         data = self.conv2(data)
         data2= data.max(dim=-1, keepdim=False)[0]
 
