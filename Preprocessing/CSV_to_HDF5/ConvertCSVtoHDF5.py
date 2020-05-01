@@ -20,9 +20,8 @@ def CreateDatasetHDF5(pathdir,pointcloud_size):
             for idx,pointcloud in enumerate(tqdm(os.listdir(f'{pathdir}/{folder}'))):
 
                 array = np.genfromtxt(f'{pathdir}/{folder}/{pointcloud}',delimiter=',')
-
-                array = np.delete(array,slice(pointcloud_size,len(array)),0)
-
+                array.dtype = np.float32
+                #array = np.delete(array,slice(pointcloud_size,len(array)),0)
                 group.create_dataset(f'pc{idx}',data=array)
 
 def shuffle(pathdir):
@@ -39,7 +38,7 @@ def shuffle(pathdir):
                 pointcloud = np.array(pointcloud)
 
                 combined_pointcloud_list.append(pointcloud)
-                combined_label_list.append(np.eye(2)[index])
+                combined_label_list.append(np.eye(2,dtype=np.int64)[index])
 
         temp_zip = list(zip(combined_pointcloud_list,combined_label_list))
         random.shuffle(temp_zip)
