@@ -32,7 +32,7 @@ def cal_loss(pred, label):
 def train(model, epoch, mode, dataloader, optimizer, scheduler, criterion, best_test_accuracy, epoch_accuracy_normal, epoch_accuracy_average, epoch_loss):
     print(f'[INFO] {mode}...')
     #Selecting which mode to run the model (Training or Testing)
-    if mode == 'Training':        
+    if mode == 'Training':
         scheduler.step()
         model.train()
     else:
@@ -42,19 +42,19 @@ def train(model, epoch, mode, dataloader, optimizer, scheduler, criterion, best_
     count = 0.0
     predicted_labels = []
     correct_labels = []
-    
+
     for data, label in tqdm(dataloader):
-        data = data.to(device) 
+        data = data.to(device)
         label = label.to(device).squeeze()
 
         data = data.permute(0,2,1)
         batch_size = data.size()[0]
-        
+
         if mode == 'Training':
             optimizer.zero_grad() #zero_grad clears old gradients from the last step (otherwise you’d just accumulate the gradients from all loss.backward() calls).
 
         output = model(data) #Calculates class probabilities for each point cloud. So if batchsize is 16 and num classes is 40, it returns [16,40].
-        loss = criterion(output,label) 
+        loss = criterion(output,label)
 
         if mode == 'Training':
             loss.backward() #computes the derivative of the loss w.r.t. the parameters (or anything requiring gradients) using backpropagation.
@@ -65,9 +65,9 @@ def train(model, epoch, mode, dataloader, optimizer, scheduler, criterion, best_
 
         loss_sum += loss.item()*batch_size
         correct_labels.append(label.cpu().numpy())
-        predicted_labels.append(predictions.detach().cpu().numpy()) 
+        predicted_labels.append(predictions.detach().cpu().numpy())
 
-    #Concats 
+    #Concats
     predicted_labels = np.concatenate(predicted_labels)
     correct_labels = np.concatenate(correct_labels)
 
@@ -80,13 +80,13 @@ def train(model, epoch, mode, dataloader, optimizer, scheduler, criterion, best_
     epoch_accuracy_normal.append(normal_accuracy)
     epoch_accuracy_average.append(average_accuracy)
     epoch_loss.append(loss_sum)
-    
+
     print(f'{mode} {epoch}| Loss: {loss_sum}| {mode} acc: {normal_accuracy}| {mode} avg acc: {average_accuracy}')
 
     #The model with the highest found accuracy for testing is saved
     if mode == 'Testing':
         if normal_accuracy > best_test_accuracy:
-            best_test_accuracy = normal_accuracy 
+            best_test_accuracy = normal_accuracy
             print('[INFO] Saving Model...')
             np.savetxt('Epoch.txt',np.array([epoch]))
             torch.save(model.state_dict(),'model.t7')
@@ -120,7 +120,7 @@ if __name__ == "__main__":
 
     #Lists to save information such as accuracy and loss for each epoch.
     best_test_accuracy = 0
-    
+
     train_epoch_accuracy_normal = []
     train_epoch_accuracy_average = []
     train_epoch_loss = []
@@ -131,19 +131,16 @@ if __name__ == "__main__":
 
     #Go through all epochs
     for epoch in range(EPOCHS):
-        train(model, epoch, 'Training', train_loader, optimizer, scheduler, criterion, best_test_accuracy, 
-                                                                                       train_epoch_accuracy_normal, 
-                                                                                       train_epoch_accuracy_average, 
+        train(model, epoch, 'Training', train_loader, optimizer, scheduler, criterion, best_test_accuracy,
+                                                                                       train_epoch_accuracy_normal,
+                                                                                       train_epoch_accuracy_average,
                                                                                        train_epoch_loss)
 
-        best_test_accuracy = train(model, epoch, 'Testing', test_loader, optimizer, scheduler, criterion, best_test_accuracy, 
-                                                                                                          test_epoch_accuracy_normal, 
-                                                                                                          test_epoch_accuracy_average, 
+        best_test_accuracy = train(model, epoch, 'Testing', test_loader, optimizer, scheduler, criterion, best_test_accuracy,
+                                                                                                          test_epoch_accuracy_normal,
+                                                                                                          test_epoch_accuracy_average,
                                                                                                           test_epoch_loss)
 
     #Saves the accuracy and lost lists into csvs save_to_csvs(mode, epoch_accuracy_normal, epoch_accuracy_average, epoch_loss):
     save_to_csvs('Train',train_epoch_accuracy_normal, train_epoch_accuracy_average, train_epoch_loss)
     save_to_csvs('Test',test_epoch_accuracy_normal, test_epoch_accuracy_average, test_epoch_loss)
-    
-    
-    

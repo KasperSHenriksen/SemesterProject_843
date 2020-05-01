@@ -25,7 +25,7 @@ def load_data(partition):
 def translate_pointcloud(pointcloud):
     xyz1 = np.random.uniform(low=2./3., high=3./2., size=[3])
     xyz2 = np.random.uniform(low=-0.2, high=0.2, size=[3])
-       
+
     translated_pointcloud = np.add(np.multiply(pointcloud, xyz1), xyz2).astype('float32')
     return translated_pointcloud
 
@@ -38,7 +38,7 @@ class ModelNet40(Dataset):
     def __init__(self, num_points, partition='train'):
         self.data, self.label = load_data(partition)
         self.num_points = num_points
-        self.partition = partition        
+        self.partition = partition
 
     def __getitem__(self, item):
         pointcloud = self.data[item][:self.num_points]
@@ -71,8 +71,8 @@ class PointCloudDataset(Dataset):
     def __init__(self,num_points,partition):
         self.data, self.labels = load_data3(partition)
         self.num_points = num_points
-        self.partition = partition    
-    
+        self.partition = partition
+
     def __getitem__(self,item):
         data = self.data[item][:self.num_points]
         labels = self.labels[item]
@@ -124,26 +124,25 @@ def load_data3(partition):
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     DATA_DIR = os.path.join(BASE_DIR, 'data')
 
-    with h5py.File(f'{DATA_DIR}/modelnet40_ply_hdf5_2048.h5','r') as hdf:
+    with h5py.File(f'{DATA_DIR}/pointcloud_hdf5.h5','r') as hdf:
         print(hdf.get(f'{partition}'))
         print(hdf.get(f'{partition}/Labels'))
         print(hdf.get(f'{partition}/PointClouds'))
 
         data = []
         for pointcloud in hdf[f'{partition}/PointClouds']:
-            array = hdf.get(f'{partition}/PointClouds/{pointcloud}')
+            array = np.array(hdf.get(f'{partition}/PointClouds/{pointcloud}'))
             data.append(array)
-        data = np.array(data) #,dtype=np.float32
+        data = np.array(data)
         print(data.shape)
-        print(data[0].dtype)
 
         labels = []
         for label in hdf[f'{partition}/Labels']:
-            array = hdf.get(f'{partition}/Labels/{pointcloud}')
+            array = np.array(hdf.get(f'{partition}/Labels/{pointcloud}'))
             labels.append(array)
-        labels = np.array(labels) #,dtype=np.int64
-        print(labels.shape)
-        print(labels[0].dtype)
+        labels = np.array(labels)
+        print(f'Data Shape: {data.shape} | Type: {data[0].dtype}')
+        print(f'Label Shape: {labels.shape} | Type: {labels[0].dtype}')
 
         return data, labels
 
