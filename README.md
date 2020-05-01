@@ -13,7 +13,7 @@ Add text here...
 ## Datasets
 ### Own
 
-PointCloudV1 (100 Fine, 100 Defect):
-www.kaggle.com/dataset/e54a726bc0a9f901e560eac2e2a71f9eca015dabd4a42663d20f5c021a3b3f1d
+PointCloudV1 (1600 training, 400 validation)
+www.kaggle.com/dataset/dad336dcf476592be093ce30e61d72b3ac4872ad0d3c57822d2a5e81e32e0bf6
 
 ### Others
