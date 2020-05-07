@@ -16,17 +16,24 @@ NUM_POINTS = 1024
 DROPOUT_RATE = 0.5
 TRAIN_BATCH_SIZE = 16
 TEST_BATCH_SIZE = 8
-EPOCHS = 50
-K = 20
-LR = 0.001
+EPOCHS = 1
+K = 20 #20
+LR = 0.00000001
 
 device = torch.device("cuda")
 
 model = DGCNN(numClass = NUM_CLASS, emb_dims = EMB_DIMS, dropout_rate=DROPOUT_RATE, batch_size = TRAIN_BATCH_SIZE, k = K).to(device)
 
+#def count_parameters(model):
+#    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+#print(count_parameters(model))
+
+
 def cal_loss(pred, label):
-    label = label.contiguous().view(-1)
-    loss = F.cross_entropy(pred, label, reduction='mean')
+    label = label.contiguous().view(-1) #This One
+    loss = F.cross_entropy(pred, label, reduction='mean') #BCELoss 
+    #loss = nn.BCELoss(pred, label, reduction='mean') #BCELoss 
     return loss
 
 def train(model, epoch, mode, dataloader, optimizer, scheduler, criterion, best_test_accuracy, epoch_accuracy_normal, epoch_accuracy_average, epoch_loss):
@@ -45,7 +52,7 @@ def train(model, epoch, mode, dataloader, optimizer, scheduler, criterion, best_
 
     for data, label in tqdm(dataloader):
         data = data.to(device)
-        label = label.to(device).squeeze()
+        label = label.to(device).squeeze() #This one
 
         data = data.permute(0,2,1)
         batch_size = data.size()[0]
@@ -60,7 +67,7 @@ def train(model, epoch, mode, dataloader, optimizer, scheduler, criterion, best_
             loss.backward() #computes the derivative of the loss w.r.t. the parameters (or anything requiring gradients) using backpropagation.
             optimizer.step() #causes the optimizer to take a step based on the gradients of the parameters.
 
-        predictions = output.max(dim=1)[1]
+        predictions = output.max(dim=1)[1] #This one
         count += batch_size
 
         loss_sum += loss.item()*batch_size
@@ -84,7 +91,7 @@ def train(model, epoch, mode, dataloader, optimizer, scheduler, criterion, best_
     print(f'{mode} {epoch}| Loss: {loss_sum}| {mode} acc: {normal_accuracy}| {mode} avg acc: {average_accuracy}')
 
     #The model with the highest found accuracy for testing is saved
-    if mode == 'Testing':
+    if mode == 'TestingXXX':
         if normal_accuracy > best_test_accuracy:
             best_test_accuracy = normal_accuracy
             print('[INFO] Saving Model...')
@@ -92,6 +99,30 @@ def train(model, epoch, mode, dataloader, optimizer, scheduler, criterion, best_
             torch.save(model.state_dict(),'model.t7')
             return best_test_accuracy
 
+def test(model):
+    test_loader = DataLoader(PointCloudDataset(partition='Testing', num_points=NUM_POINTS), batch_size=TEST_BATCH_SIZE, shuffle=True, drop_last=False)
+
+    model = model.eval()
+
+    predicted_labels = []
+    correct_labels = []
+    for data, label in test_loader:
+        data = data.to(device)
+        label = label.to(device).squeeze()
+
+        data = data.permute(0,2,1)
+        batch_size = data.size()[0]
+
+        output = model(data)
+        preds = output.max(dim=1)[1]
+        correct_labels.append(label.cpu().numpy())
+        predicted_labels.append(preds.detach().cpu().numpy())
+    correct_labels = np.concatenate(correct_labels)
+    predicted_labels = np.concatenate(predicted_labels)
+    print(f'Correct: {correct_labels}')
+    print(f'Predicted: {predicted_labels}')
+    test_acc = metrics.accuracy_score(correct_labels, predicted_labels)
+    print(f'Test Accuracy = {test_acc}')
 
 def save_to_csvs(mode, epoch_accuracy_normal, epoch_accuracy_average, epoch_loss):
     np.savetxt(f'{mode}_Accuracy_normal.csv',np.array(epoch_accuracy_normal))
@@ -112,10 +143,12 @@ if __name__ == "__main__":
                              batch_size=TEST_BATCH_SIZE, shuffle=True, drop_last=False)
 
     #Optimizer
-    optimizer = optim.SGD(model.parameters(),lr = LR*100 , momentum = 0.9, weight_decay = 1e-4)
+    optimizer = optim.SGD(model.parameters(),lr = LR*100 , momentum = 0.8, weight_decay = 1e-4)
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, EPOCHS, eta_min= LR)
+    
 
     #Loss function
+    #criterion = cal_loss
     criterion = cal_loss
 
     #Lists to save information such as accuracy and loss for each epoch.
@@ -130,7 +163,7 @@ if __name__ == "__main__":
     test_epoch_loss = []
 
     #Go through all epochs
-    for epoch in range(EPOCHS):
+    for epoch in range(0):
         train(model, epoch, 'Training', train_loader, optimizer, scheduler, criterion, best_test_accuracy,
                                                                                        train_epoch_accuracy_normal,
                                                                                        train_epoch_accuracy_average,
@@ -144,3 +177,6 @@ if __name__ == "__main__":
     #Saves the accuracy and lost lists into csvs save_to_csvs(mode, epoch_accuracy_normal, epoch_accuracy_average, epoch_loss):
     save_to_csvs('Train',train_epoch_accuracy_normal, train_epoch_accuracy_average, train_epoch_loss)
     save_to_csvs('Test',test_epoch_accuracy_normal, test_epoch_accuracy_average, test_epoch_loss)
+
+    #Testing
+    test(model)
