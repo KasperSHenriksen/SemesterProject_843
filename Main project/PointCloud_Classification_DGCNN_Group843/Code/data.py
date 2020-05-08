@@ -130,18 +130,22 @@ def load_data3(partition):
             print(hdf.get(f'{partition}/Labels'))
             print(hdf.get(f'{partition}/PointClouds'))
 
-            data = []
-            for pointcloud in hdf[f'{partition}/PointClouds']:
-                array = np.array(hdf.get(f'{partition}/PointClouds/{pointcloud}'))
-                data.append(array)
-            data = np.array(data)
-            print(data.shape)
 
-            labels = []
-            for label in hdf[f'{partition}/Labels']:
-                array = np.array(hdf.get(f'{partition}/Labels/{pointcloud}'))
-                labels.append(array)
-            labels = np.array(labels)
+            data = hdf[f'{partition}/PointClouds'][:]
+            #data = []
+            #for pointcloud in hdf[f'{partition}/PointClouds']:
+            #    array = np.array(hdf.get(f'{partition}/PointClouds/{pointcloud}'))
+            #    data.append(array)
+            #data = np.array(data)
+            #print(data.shape)
+
+            labels = hdf[f'{partition}/Labels'][:]
+
+            #labels = []
+            #for label in hdf[f'{partition}/Labels']:
+            #    array = np.array(hdf.get(f'{partition}/Labels/{pointcloud}'))
+            #    labels.append(array)
+            #labels = np.array(labels)
 
             print(f'Data Shape: {data.shape} | Type: {data[0].dtype}')
             print(f'Label Shape: {labels.shape} | Type: {labels[0].dtype}')
@@ -154,19 +158,26 @@ def load_data3(partition):
             print(hdf.get(f'{partition}/Labels'))
             print(hdf.get(f'{partition}/PointClouds'))
 
-            data = []
-            for pointcloud in hdf[f'{partition}/PointClouds']:
-                array = np.array(hdf.get(f'{partition}/PointClouds/{pointcloud}'))
-                data.append(array)
-            data = np.array(data)
-            print(data.shape)
+            #data = []
+            #for pointcloud in hdf[f'{partition}/PointClouds']:
+            #    array = np.array(hdf.get(f'{partition}/PointClouds/{pointcloud}'))
+            #    print(array)
+            #    data.append(array)
+            #data = np.array(data)
+            #print(data.shape)
 
-            labels = []
-            for label in hdf[f'{partition}/Labels']:
-                array = np.array(hdf.get(f'{partition}/Labels/{pointcloud}'))
-                print(array)
-                labels.append(array)
-            labels = np.array(labels)
+            data = hdf[f'{partition}/PointClouds'][:]
+            #print(data)
+            #labels = []
+            #for label in hdf[f'{partition}/Labels']:
+            #    array = np.array(hdf.get(f'{partition}/Labels/{pointcloud}'))
+            #    print(array)
+            #    labels.append(array)
+            #labels = np.array(labels)
+
+            #print(hdf[f'{partition}/Labels'][:])
+            labels = hdf[f'{partition}/Labels'][:]
+            #print(labels[0])
 
             print(f'Data Shape: {data.shape} | Type: {data[0].dtype}')
             print(f'Label Shape: {labels.shape} | Type: {labels[0].dtype}')
@@ -185,7 +196,8 @@ def read_h5():
             print('\n')
 
 if __name__ == '__main__':
+    #pass
     #read_h5('Training')
     #load_data2('Training')
     #load_data3('Training')
-    load_data3('Testing')
+    load_data3('Training')

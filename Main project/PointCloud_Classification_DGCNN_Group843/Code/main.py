@@ -16,7 +16,7 @@ NUM_POINTS = 1024
 DROPOUT_RATE = 0.5
 TRAIN_BATCH_SIZE = 16
 TEST_BATCH_SIZE = 8
-EPOCHS = 1
+EPOCHS = 20
 K = 20 #20
 LR = 0.00000001
 
@@ -143,7 +143,7 @@ if __name__ == "__main__":
                              batch_size=TEST_BATCH_SIZE, shuffle=True, drop_last=False)
 
     #Optimizer
-    optimizer = optim.SGD(model.parameters(),lr = LR*100 , momentum = 0.8, weight_decay = 1e-4)
+    optimizer = optim.SGD(model.parameters(),lr = LR*100 , momentum = 0.8, weight_decay = 1e-4) #0.9 normal momentum
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, EPOCHS, eta_min= LR)
     
 
@@ -163,20 +163,20 @@ if __name__ == "__main__":
     test_epoch_loss = []
 
     #Go through all epochs
-    for epoch in range(0):
+    for epoch in range(EPOCHS):
         train(model, epoch, 'Training', train_loader, optimizer, scheduler, criterion, best_test_accuracy,
                                                                                        train_epoch_accuracy_normal,
                                                                                        train_epoch_accuracy_average,
                                                                                        train_epoch_loss)
 
-        best_test_accuracy = train(model, epoch, 'Testing', test_loader, optimizer, scheduler, criterion, best_test_accuracy,
+        best_test_accuracy = train(model, epoch, 'Validation', test_loader, optimizer, scheduler, criterion, best_test_accuracy,
                                                                                                           test_epoch_accuracy_normal,
                                                                                                           test_epoch_accuracy_average,
                                                                                                           test_epoch_loss)
 
-    #Saves the accuracy and lost lists into csvs save_to_csvs(mode, epoch_accuracy_normal, epoch_accuracy_average, epoch_loss):
-    save_to_csvs('Train',train_epoch_accuracy_normal, train_epoch_accuracy_average, train_epoch_loss)
-    save_to_csvs('Test',test_epoch_accuracy_normal, test_epoch_accuracy_average, test_epoch_loss)
+        #Saves the accuracy and lost lists into csvs save_to_csvs(mode, epoch_accuracy_normal, epoch_accuracy_average, epoch_loss):
+        save_to_csvs('Train',train_epoch_accuracy_normal, train_epoch_accuracy_average, train_epoch_loss)
+        save_to_csvs('Test',test_epoch_accuracy_normal, test_epoch_accuracy_average, test_epoch_loss)
 
     #Testing
     test(model)
