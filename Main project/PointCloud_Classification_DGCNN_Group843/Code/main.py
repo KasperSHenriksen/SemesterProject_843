@@ -14,7 +14,7 @@ import os
 NUM_CLASS = 2
 EMB_DIMS = 1024
 NUM_POINTS = 1024
-EPOCHS = 2
+EPOCHS = 50
 
 #def count_parameters(model):
 #    return sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -116,7 +116,7 @@ def train(current_path, model, epoch, mode, dataloader, optimizer, scheduler, cr
             print('[INFO] Saving Model...')
             np.savetxt(f'{current_path}/Epoch.txt', [epoch])
             torch.save(model,f'{current_path}/model.t7')
-            return best_test_accuracy
+        return best_test_accuracy
 def test(model):
     test_loader = DataLoader(PointCloudDataset(partition='Testing', num_points=NUM_POINTS), batch_size=TEST_BATCHSIZE, shuffle=True, drop_last=False)
 
@@ -157,13 +157,13 @@ if __name__ == "__main__":
 
     print("running main ln157")
 
-    DROPOUT_RATE, TRAIN_BATCHSIZE, TEST_BATCHSIZE, K, LR = random_hyperparamter_search(current_path, dropout = [0.5,0.8], #Normal 0.5
+    DROPOUT_RATE, TRAIN_BATCHSIZE, TEST_BATCHSIZE, K, LR, MOMENTUM, WEIGHT_DECAY  = random_hyperparamter_search(current_path, dropout = [0.3,0.8], #Normal 0.5
                                                                             train_batchsize = [16,17], #Normal 16: 16 only max exclusive
                                                                             test_batchsize = [8,9], #Normal 8: 8 only, max exclusive
                                                                             k = [15,26], #Normal 20: 15 to 25
                                                                             lr = [0.000001,0.001], #Normal 0.000001: 
                                                                             momentum = [0.9,0.99], #Normal: 0.9
-                                                                            weight_decay = [1e-4,1e-5]) #Normal: 1e-4
+                                                                            weight_decay = [1e-5,1e-4]) #Normal: 1e-4
 
     model = DGCNN(numClass = NUM_CLASS, emb_dims = EMB_DIMS, dropout_rate=DROPOUT_RATE, batch_size = TRAIN_BATCHSIZE, k = K).to(device)
 
@@ -173,7 +173,7 @@ if __name__ == "__main__":
                             batch_size=TRAIN_BATCHSIZE, shuffle=True, drop_last=False)
 
     #Optimizer
-    optimizer = optim.SGD(model.parameters(),lr = LR*100 , momentum = 0.9, weight_decay = 1e-4) #0.9 normal momentum, LR*100
+    optimizer = optim.SGD(model.parameters(),lr = LR*100 ,momentum = MOMENTUM, weight_decay = WEIGHT_DECAY) #0.9 normal momentum, LR*100
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, EPOCHS, eta_min= LR)
     
     #Loss function
