@@ -124,27 +124,65 @@ def load_data3(partition):
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     DATA_DIR = os.path.join(BASE_DIR, 'data')
 
-    with h5py.File(f'{DATA_DIR}/pointcloud_hdf5.h5','r') as hdf:
-        print(hdf.get(f'{partition}'))
-        print(hdf.get(f'{partition}/Labels'))
-        print(hdf.get(f'{partition}/PointClouds'))
+    if(partition == 'Training' or partition == 'Validation'):
+        with h5py.File(f'{DATA_DIR}/pointcloud_hdf5.h5','r') as hdf:
+            print(hdf.get(f'{partition}'))
+            print(hdf.get(f'{partition}/Labels'))
+            print(hdf.get(f'{partition}/PointClouds'))
 
-        data = []
-        for pointcloud in hdf[f'{partition}/PointClouds']:
-            array = np.array(hdf.get(f'{partition}/PointClouds/{pointcloud}'))
-            data.append(array)
-        data = np.array(data)
-        print(data.shape)
 
-        labels = []
-        for label in hdf[f'{partition}/Labels']:
-            array = np.array(hdf.get(f'{partition}/Labels/{pointcloud}'))
-            labels.append(array)
-        labels = np.array(labels)
-        print(f'Data Shape: {data.shape} | Type: {data[0].dtype}')
-        print(f'Label Shape: {labels.shape} | Type: {labels[0].dtype}')
+            data = hdf[f'{partition}/PointClouds'][:]
+            #data = []
+            #for pointcloud in hdf[f'{partition}/PointClouds']:
+            #    array = np.array(hdf.get(f'{partition}/PointClouds/{pointcloud}'))
+            #    data.append(array)
+            #data = np.array(data)
+            #print(data.shape)
 
-        return data, labels
+            labels = hdf[f'{partition}/Labels'][:]
+
+            #labels = []
+            #for label in hdf[f'{partition}/Labels']:
+            #    array = np.array(hdf.get(f'{partition}/Labels/{pointcloud}'))
+            #    labels.append(array)
+            #labels = np.array(labels)
+
+            print(f'Data Shape: {data.shape} | Type: {data[0].dtype}')
+            print(f'Label Shape: {labels.shape} | Type: {labels[0].dtype}')
+
+            return data, labels
+    
+    if(partition == 'Testing'):
+        with h5py.File(f'{DATA_DIR}/pointcloud_hdf5_testing.h5','r') as hdf:
+            print(hdf.get(f'{partition}'))
+            print(hdf.get(f'{partition}/Labels'))
+            print(hdf.get(f'{partition}/PointClouds'))
+
+            #data = []
+            #for pointcloud in hdf[f'{partition}/PointClouds']:
+            #    array = np.array(hdf.get(f'{partition}/PointClouds/{pointcloud}'))
+            #    print(array)
+            #    data.append(array)
+            #data = np.array(data)
+            #print(data.shape)
+
+            data = hdf[f'{partition}/PointClouds'][:]
+            #print(data)
+            #labels = []
+            #for label in hdf[f'{partition}/Labels']:
+            #    array = np.array(hdf.get(f'{partition}/Labels/{pointcloud}'))
+            #    print(array)
+            #    labels.append(array)
+            #labels = np.array(labels)
+
+            #print(hdf[f'{partition}/Labels'][:])
+            labels = hdf[f'{partition}/Labels'][:]
+            #print(labels[0])
+
+            print(f'Data Shape: {data.shape} | Type: {data[0].dtype}')
+            print(f'Label Shape: {labels.shape} | Type: {labels[0].dtype}')
+
+            return data, labels
 
 def read_h5():
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -158,6 +196,8 @@ def read_h5():
             print('\n')
 
 if __name__ == '__main__':
+    #pass
     #read_h5('Training')
     #load_data2('Training')
+    #load_data3('Training')
     load_data3('Training')
