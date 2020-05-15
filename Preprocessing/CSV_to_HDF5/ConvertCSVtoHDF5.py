@@ -27,7 +27,7 @@ def shuffle(pathdir):
     with h5py.File(f'{pathdir}/pointcloud_hdf5.h5','r') as hdf:
         combined_pointcloud_list = []
         combined_label_list = []
-
+        print(hdf.keys())
         for index, group in enumerate(list(hdf.keys())):
             pointcloud_list = list(hdf.get(f'{group}'))
 
@@ -39,7 +39,6 @@ def shuffle(pathdir):
                 combined_pointcloud_list.append(pointcloud)
                 #combined_label_list.append(np.eye(2,dtype=np.int64)[index]) #Hot encoding
                 label = np.array(index,dtype=np.int64)
-                print(label)
                 combined_label_list.append(np.array(label))
 
         temp_zip = list(zip(combined_pointcloud_list,combined_label_list))
@@ -48,34 +47,61 @@ def shuffle(pathdir):
 
         return pointclouds, labels
 
-def combine_and_shuffle(pathdir,validation_ratio = 0.15):
+def combine_and_shuffle(pathdir,training,validation_ratio = 0.15):
     pointclouds, labels = shuffle(pathdir)
     with h5py.File(f'{pathdir}/pointcloud_hdf5.h5','w') as hdf:
-        size = int(len(pointclouds)*validation_ratio)
+        if(training == True):
+            size = int(len(pointclouds)*validation_ratio)
 
-        #Validation Set
-        validation_group = hdf.create_group('Validation')
-        pointcloud_group = validation_group.create_group('PointClouds')
-        label_group = validation_group.create_group('Labels')
-        for idx,(pointcloud,label) in enumerate(zip(pointclouds[-size:],labels[-size:])):
-            pointcloud_group.create_dataset(f'pc{idx}',data=pointcloud)
-            label_group.create_dataset(f'pc{idx}',data=label)
+            #Validation Set
+            validation_group = hdf.create_group('Validation')
+            pointcloud_group = validation_group.create_dataset('PointClouds',data=pointclouds[-size:])
+            label_group = validation_group.create_dataset('Labels', data=labels[-size:])
 
-        #Training Set
-        training_group = hdf.create_group('Training')
-        pointcloud_group = training_group.create_group('PointClouds')
-        label_group = training_group.create_group('Labels')
-        for idx,(pointcloud,label) in enumerate(zip(pointclouds[:-size],labels[:-size])):
-            pointcloud_group.create_dataset(f'pc{idx}',data=pointcloud)
-            label_group.create_dataset(f'pc{idx}',data=label)
+            # validation_group = hdf.create_group('Validation')
+            # pointcloud_group = validation_group.create_group('PointClouds')
+            # label_group = validation_group.create_group('Labels')
+            # for idx,(pointcloud,label) in enumerate(zip(pointclouds[-size:],labels[-size:])):
+            #     pointcloud_group.create_dataset(f'pc{idx}',data=pointcloud)
+            #     label_group.create_dataset(f'pc{idx}',data=label)
+
+            #Training Set
+            training_group = hdf.create_group('Training')
+            pointcloud_group = training_group.create_dataset('PointClouds', data=pointclouds[:-size])
+            label_group = training_group.create_dataset('Labels', data=labels[:-size])
+
+            print(label_group[:])
+
+            #training_group = hdf.create_group('Training')
+            #pointcloud_group = training_group.create_group('PointClouds')
+            #label_group = training_group.create_group('Labels')
+            #for idx,(pointcloud,label) in enumerate(zip(pointclouds[:-size],labels[:-size])):
+            #    pointcloud_group.create_dataset(f'pc{idx}',data=pointcloud)
+            #    label_group.create_dataset(f'pc{idx}',data=label)
+        else:
+            size = int(len(pointclouds))
+
+            #Testing Set
+            testing_group = hdf.create_group('Testing')
+            pointcloud_group = testing_group.create_dataset('PointClouds',data=pointclouds)
+            label_group = testing_group.create_dataset('Labels',data=labels)
+
+            print(pointcloud_group[:])
+
 
 
 path = input("Enter path to dataset: ")
-pointcloud_size = int(input("Fixed number of points in point clouds: "))
-validation_ratio = float(input("Enter the validation ratio for splitting the dataset into training and validation: "))
+#pointcloud_size = int(input("Fixed number of points in point clouds: "))
+training_or_testing = input("Training or Testing: ")
 
-CreateDatasetHDF5(path,pointcloud_size)
-combine_and_shuffle(path,validation_ratio = validation_ratio)
+if(training_or_testing == 'Training'):
+    validation_ratio = float(input("Enter the validation ratio for splitting the dataset into training and validation: "))
+
+    CreateDatasetHDF5(path,1024)
+    combine_and_shuffle(path,training = True,validation_ratio = validation_ratio)
+else:
+    CreateDatasetHDF5(path,1024)
+    combine_and_shuffle(path,training = False,validation_ratio = 0)
 
 
 #Show info about the created dataset
