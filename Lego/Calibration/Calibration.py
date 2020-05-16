@@ -28,7 +28,7 @@ for fname in images:
 
 cv.destroyAllWindows()
 
-ret, mtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
+rets, mtx, dist, rvecs, tvecs = cv.calibrateCamera(objpoints, imgpoints, gray.shape[::-1], None, None)
 savetxt('mtx.csv',mtx, delimiter=',')
 print(rvecs[0])
 rvecs0=cv.Rodrigues(rvecs[0])
@@ -37,6 +37,7 @@ print(rvecs0)
 rvecs=np.array(rvecs)
 print(rvecs.shape)
 print(rvecs[0].shape)
+print(rets)
 ''' rvecs=pandas.DataFrame(rvecs)
 rvecs.to_csv('rvecs.csv')
 print(type(rvecs))
