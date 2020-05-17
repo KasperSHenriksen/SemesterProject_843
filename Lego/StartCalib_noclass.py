@@ -58,16 +58,12 @@ RDK.Cam2D_Snapshot(path + "/image.png", cam_id)
 #----------------------------------------------------------------------
 #This is to locate the brick in the image, so change the location
 #       to where you save your image in the previous step
-imagepath=r'/home/kasper/Desktop/GitHub/SemesterProject_843/Lego/image.png'
+imagepath=r'E:\OneDrive\OneDrive - Aalborg Universitet\AAU\8th semester\P8\DGCNN\SemesterProject_843\Lego\image.png'
 image1=cv.imread(imagepath)
 
 #cv.imshow('original_img',image1)
 cv.imwrite(path+"/originalimage.jpg",image1)
 
-#class
-class Blob:
-    def __init__(self):
-        self.position = position
 
 #COLOR DETECTION --> Thresholds: HSV
 def DetectColor(image,lower_boundary,upper_boundary):
@@ -159,36 +155,6 @@ for color_name in blob_location_dict:
 
         slope = ComputeSlope(resized_patch,image1)
         print(slope)
-
-
-
-
-
-
-
-""" cv.imshow("Redimage",closing)
-cv.imshow("Greenimage",GreenImage)
-cv.imshow("Yellowimage",YellowImage)
- """
-
-""" boundaries = [
-	([0, 200, 0], [0, 255, 80]),
-	([0, 230, 230], [0, 250, 255])
-]
-my_Images = []
-for (lower, upper) in boundaries:
-    # create NumPy arrays from the boundaries
-    lower = np.array(lower, dtype = "uint8")
-    upper = np.array(upper, dtype = "uint8")
-    mask = cv.inRange(image1, lower, upper)
-    cv.imshow("mask",mask)
-    output = cv.bitwise_and(image1, image1, mask = mask)
-    #closing = cv.morphologyEx(output, cv.MORPH_CLOSE, np.ones((5,5)))
-    my_Images.append(output)
-
-cv.imshow("Green",my_Images[0])
-cv.imshow("Blue",my_Images[1])
-cv.imshow("Red",my_Images[2]) """
 
 
 
