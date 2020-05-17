@@ -6,6 +6,7 @@ import numpy as np
 #Our own scripts
 import BrickDetection
 import Calibration
+import math
 
 
 # Any interaction with RoboDK must be done through RDK: So those have to be written in order to communicate with RoboDk
@@ -16,9 +17,12 @@ RDK.Cam2D_Close()
 
 # get the robot by name:
 robot = RDK.Item('KUKA KR 6 R900 sixx', ITEM_TYPE_ROBOT)
+tool = RDK.Item('Gripper', ITEM_TYPE_TOOL)
 
 Calibration_bricks = ['YellowCalib','RedCalib','BlueCalib','GreenCalib']
 Real_bricks= ['Blue 1','Blue 2','Green 1','Green 2','Red 1','Yellow 1','Yellow 2','Yellow 3','Yellow 4']
+
+
 
 def getLocation(names):
     bricks = []
@@ -46,10 +50,10 @@ brick1.setPoseFrame(frame) '''
 home = RDK.Item('Home')
 target = RDK.Item('Plane')
 
-# get the pose of the target (4x4 matrix representing position and orientation):
-# This gives the position of the target reference but as a mat type, but it's currently not used anywhere
-poseref = target.Pose() 
-robot.setJoints([0,-90,90,180,-90,0])
+# get the pose of the target (4x4 matrix representing brick and orientation):
+# This gives the brick of the target reference but as a mat type, but it's currently not used anywhere
+#poseref = target.Pose() 
+robot.setJoints([0,-90,90,180,-90,45])
 
 #Select the camera and settings
 #cameraf=RDK.ItemUserPick('Select the Camera location (reference, tool or object)')
@@ -95,6 +99,17 @@ found_bricks = BrickDetection.GetBricks(image,verbose=False)
 #----------------------------------------------------------------------
     #Run through assembly order and check brick list if it has the brick color and so on.
     #Returns: Order of bricks 
+def mapping(x,y,d):
+    xC = ((d[0]*x)+(d[1]*y)+d[2])/((d[6]*x)+(d[7]*y)+1)
+    yC = ((d[3]*x)+(d[4]*y)+d[5])/((d[6]*x)+(d[7]*y)+1)
+    return xC,yC
+    
+def cameraToWorkspace(found_bricks,d):
+    for brick in found_bricks:
+        brick.pickup_position[0],brick.pickup_position[1] = mapping(brick.pickup_position[0],brick.pickup_position[1],d)
+    return found_bricks
+
+found_bricks = cameraToWorkspace(found_bricks,d)
 
 def GetOrder(blueprint,found_bricks):
     order = []
@@ -113,23 +128,50 @@ marge = ["Yellow","Green","Green","Yellow","Blue"]
 bartOrder = GetOrder(bart,found_bricks)
 margeOrder = GetOrder(marge,found_bricks)
 
-print(robot.Pose())
-#robot.MoveJ(brick_loc_workspace[0])
-robot.setJoints(brick_loc_workspace[0])
-
-"""
-def mapping(x,y,d):
-    xC = ((d[0]*x)+(d[1]*y)+d[2])/((d[6]*x)+(d[7]*y)+1)
-    yC = ((d[3]*x)+(d[4]*y)+d[5])/((d[6]*x)+(d[7]*y)+1)
-    return xC,yC
 
 
- """
+frame = RDK.Item('WorkSpace', ITEM_TYPE_FRAME)
+robot.setPoseFrame(frame)
+pose_ref = robot.Pose()
 
-#Run Robot Part (Params: Order of Bricks)
-#----------------------------------------------------------------------
-    #Move joints Pickup and Place
-    #Complete
+def Assemble(pose_ref,order,at_position):
+    for i, brick in enumerate(order):
+        #Home
+        pose_ref.setPos([520,470,280])
+        robot.MoveJ(pose_ref)   
+        
+        #Rotation
+        pose_ref = TxyzRxyz_2_Pose([520,470,280,math.radians(-180),math.radians(0),math.radians(brick.slope)])
+        robot.MoveJ(pose_ref)   
+        
+        #Pickup Object
+        pose_ref.setPos(brick.pickup_position)
+        robot.MoveJ(pose_ref)
+        tool.AttachClosest()
+
+        #Home
+        pose_ref.setPos([520,470,280])
+        robot.MoveJ(pose_ref)
+
+        #Above target
+        pose_ref.setPos([at_position[0],at_position[1],300])
+        robot.MoveJ(pose_ref)
+
+        #Rotation
+        pose_ref = TxyzRxyz_2_Pose([at_position[0],at_position[1],300,math.radians(-180),math.radians(0),0])
+        robot.MoveJ(pose_ref)   
+        
+        #Place Object
+        pose_ref.setPos([at_position[0],at_position[1],25*i])
+        robot.MoveJ(pose_ref)
+        tool.DetachAll()
+        
+        #Above target
+        pose_ref.setPos([at_position[0],at_position[1],300])
+        robot.MoveJ(pose_ref)
+
+Assemble(pose_ref, bartOrder,[240,230])
+Assemble(pose_ref, margeOrder,[120,230])
 
 
 if cv.waitKey():
