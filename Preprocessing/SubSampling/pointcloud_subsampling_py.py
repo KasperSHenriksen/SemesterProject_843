@@ -9,9 +9,9 @@ def get_filepaths(main_folder):
     folders = set(os.listdir(f'{main_folder}'))
     non_subsampled_filepaths =[]
     for folder in folders:
-        files = os.listdir(f'{main_folder}\\{folder}')
+        files = os.listdir(rf'{main_folder}/{folder}')
         for file in files:
-            non_subsampled_filepaths.append(f'{main_folder}\{folder}\{file}')
+            non_subsampled_filepaths.append(rf'{main_folder}/{folder}/{file}')
 
     return non_subsampled_filepaths
 
@@ -19,7 +19,8 @@ def subsampling_algorithm(main_folder,algorithm,parameter_value):
     non_subsampled_filepaths = get_filepaths(main_folder)
 
     for filepath in non_subsampled_filepaths:
-        os.system(f'CloudCompare -SILENT -O {filepath} -C_EXPORT_FMT ASC -EXT CSV -PREC 6 -SEP COMMA -SS {algorithm} {parameter_value}')
+        #os.system(f'CloudCompare -SILENT -O {filepath} -C_EXPORT_FMT ASC -EXT CSV -PREC 6 -SEP COMMA -SS {algorithm} {parameter_value}')
+        os.system(f'cloudcompare.CloudCompare -SILENT -O {filepath} -C_EXPORT_FMT ASC -EXT CSV -PREC 6 -SEP COMMA -SS {algorithm} {parameter_value}')
         os.remove(filepath)
 
 
@@ -42,13 +43,12 @@ def delete_pointclouds_below_limit(main_folder,limit):
     for file in tqdm(filepaths):
         old_f = pd.read_csv(f'{file}')
         if len(old_f)+1 < limit:
-            print('DELET')
             os.remove(file)
 
-os.chdir(r'C:\Program Files\CloudCompare')
-main_folder = r'C:\Users\Kasper\Desktop\Compressed\Ham'
+main_folder = '/home/kasper/Desktop/test_dataset/Test1'
+os.chdir('/snap/bin')
 
-subsampling_algorithm(main_folder,'SPATIAL',0.08)
+subsampling_algorithm(main_folder,'SPATIAL',0.035)
 subsampling_algorithm(main_folder,'RANDOM',1024)
 
 remove_label_column(main_folder)

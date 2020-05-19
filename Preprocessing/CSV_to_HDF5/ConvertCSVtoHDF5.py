@@ -33,7 +33,6 @@ def shuffle(pathdir):
 
             for pointcloud in pointcloud_list:
                 pointcloud = hdf.get(f'{group}/{pointcloud}')
-                #pointcloud = hdf.get(f'Defect/{pointcloud}')
                 pointcloud = np.array(pointcloud)
 
                 combined_pointcloud_list.append(pointcloud)
@@ -58,26 +57,11 @@ def combine_and_shuffle(pathdir,training,validation_ratio = 0.15):
             pointcloud_group = validation_group.create_dataset('PointClouds',data=pointclouds[-size:])
             label_group = validation_group.create_dataset('Labels', data=labels[-size:])
 
-            # validation_group = hdf.create_group('Validation')
-            # pointcloud_group = validation_group.create_group('PointClouds')
-            # label_group = validation_group.create_group('Labels')
-            # for idx,(pointcloud,label) in enumerate(zip(pointclouds[-size:],labels[-size:])):
-            #     pointcloud_group.create_dataset(f'pc{idx}',data=pointcloud)
-            #     label_group.create_dataset(f'pc{idx}',data=label)
-
             #Training Set
             training_group = hdf.create_group('Training')
             pointcloud_group = training_group.create_dataset('PointClouds', data=pointclouds[:-size])
             label_group = training_group.create_dataset('Labels', data=labels[:-size])
 
-            print(label_group[:])
-
-            #training_group = hdf.create_group('Training')
-            #pointcloud_group = training_group.create_group('PointClouds')
-            #label_group = training_group.create_group('Labels')
-            #for idx,(pointcloud,label) in enumerate(zip(pointclouds[:-size],labels[:-size])):
-            #    pointcloud_group.create_dataset(f'pc{idx}',data=pointcloud)
-            #    label_group.create_dataset(f'pc{idx}',data=label)
         else:
             size = int(len(pointclouds))
 
@@ -91,7 +75,6 @@ def combine_and_shuffle(pathdir,training,validation_ratio = 0.15):
 
 
 path = input("Enter path to dataset: ")
-#pointcloud_size = int(input("Fixed number of points in point clouds: "))
 training_or_testing = input("Training or Testing: ")
 
 if(training_or_testing == 'Training'):
