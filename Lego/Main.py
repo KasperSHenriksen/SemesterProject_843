@@ -122,7 +122,7 @@ def cameraToWorkspace(found_bricks,d):
 
 found_bricks = cameraToWorkspace(found_bricks,d)
 
-#Used to make the order how the bricks should be picked up
+#Used to make the order of how the bricks should be picked up
 def GetOrder(blueprint,found_bricks):
     order = []
     for name in blueprint:
@@ -148,6 +148,10 @@ robot.setPoseFrame(frame)
 pose_ref = robot.Pose()
 
 RDK.Cam2D_Close()
+
+#This is where the robot is set to move
+#It moves above each brick and picks it up
+#Then it moves to the target location and places the brick down again
 def Assemble(pose_ref,order,at_position):
     for i, brick in enumerate(order):
         #Home
