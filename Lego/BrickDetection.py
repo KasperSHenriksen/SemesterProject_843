@@ -167,6 +167,7 @@ def GetBricks(image1,verbose):
     green_hsv_color = DetectColor(hsv_img,lower_boundary = np.array([138/2-15,90,220]), upper_boundary = np.array([138/2+15,255,255]))
     yellow_hsv_color = DetectColor(hsv_img,lower_boundary = np.array([57/2-15,90,220]), upper_boundary = np.array([59/2+15,255,255]))
     blue_hsv_color = DetectColor(hsv_img,lower_boundary = np.array([239/2-15,90,220]), upper_boundary = np.array([239/2+15,255,255]))
+    cv.imshow("test",blue_hsv_color)
     detected_color_dict = {"Red":red_hsv_color, "Green":green_hsv_color, "Yellow":yellow_hsv_color, "Blue":blue_hsv_color}
 
 

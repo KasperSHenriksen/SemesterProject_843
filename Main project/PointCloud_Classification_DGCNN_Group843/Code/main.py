@@ -9,6 +9,8 @@ import torch.nn.functional as F
 import sklearn.metrics as metrics
 from tqdm import tqdm
 import os
+import time
+from sklearn.metrics import confusion_matrix as sklean_confusion_matrix
 
 #Static Parameters
 NUM_CLASS = 2
@@ -117,30 +119,69 @@ def train(current_path, model, epoch, mode, dataloader, optimizer, scheduler, cr
             np.savetxt(f'{current_path}/Epoch.txt', [epoch])
             torch.save(model,f'{current_path}/model.t7')
         return best_test_accuracy
-def test(model):
-    test_loader = DataLoader(PointCloudDataset(partition='Testing', num_points=NUM_POINTS), batch_size=TEST_BATCHSIZE, shuffle=True, drop_last=False)
+def test():
+    TEST_BATCHSIZE = 16
+    NUM_POINTS = 1024
 
-    model = model.eval()
+    test_loader = DataLoader(PointCloudDataset(partition='Testing', num_points=NUM_POINTS), batch_size=TEST_BATCHSIZE, shuffle=False, drop_last=False)
+    
+    
+    
+    # predicted_labels = []
+    # correct_labels = []
+    
+    path = r"E:\OneDrive\Aalborg Universitet\VGIS8 - Documents\Project\Hyperparameters iterations\Moaaz"
+    #interationFolders = os.listdir(path)
+    interationFolders = ["Iteration (30)"]
+    # #Try to load models
+    # model = DGCNN(args).to(device)
+    # model = nn.DataParallel(model)
+    # model.load_state_dict(torch.load(args.model_path))
+    # model = model.eval()
+    start_time = time.time()
+    for interationFolder in interationFolders:
+        print(interationFolder)
+        modelPath = fr"{path}\{interationFolder}\model.t7"
+        # load model
 
-    predicted_labels = []
-    correct_labels = []
-    for data, label in test_loader:
-        data = data.to(device)
-        label = label.to(device).squeeze()
+        model = torch.load(modelPath)
+        model.eval()
 
-        data = data.permute(0,2,1)
-        batch_size = data.size()[0]
+        predicted_labels = []
+        correct_labels = []
+        with torch.no_grad():
+            
+            for data, label in test_loader:
+                data = data.to(device)
+                label = label.to(device).squeeze()
 
-        output = model(data)
-        preds = output.max(dim=1)[1]
-        correct_labels.append(label.cpu().numpy())
-        predicted_labels.append(preds.detach().cpu().numpy())
-    correct_labels = np.concatenate(correct_labels)
-    predicted_labels = np.concatenate(predicted_labels)
-    print(f'Correct: {correct_labels}')
-    print(f'Predicted: {predicted_labels}')
-    test_acc = metrics.accuracy_score(correct_labels, predicted_labels)
-    print(f'Test Accuracy = {test_acc}')
+                data = data.permute(0,2,1)
+                batch_size = data.size()[0]
+            
+                output = model(data)
+                preds = output.max(dim=1)[1]
+                correct_labels.append(label.cpu().numpy())
+                predicted_labels.append(preds.detach().cpu().numpy())
+                
+                
+
+
+            correct_labels = np.concatenate(correct_labels)
+            predicted_labels = np.concatenate(predicted_labels)
+            print(f'Correct: {correct_labels}')
+            print(f'Predicted: {predicted_labels}')
+            test_acc = metrics.accuracy_score(correct_labels, predicted_labels)
+            print(f'Test Accuracy = {test_acc}')
+
+            print("Confusion Matrix:",sklean_confusion_matrix(correct_labels,predicted_labels))
+            tn, fp, fn, tp = sklean_confusion_matrix(correct_labels,predicted_labels).ravel()
+            print(tn, fp, fn, tp)
+
+        stop_time = time.time()
+        total_time = stop_time - start_time
+        print(f"Time taken: {total_time}")
+        break
+        np.savetxt(fr'{path}\{interationFolder}\RealTest.csv',np.array([test_acc,total_time,tn,fp,fn,tp]))
 
 def save_to_csvs(current_path, mode, epoch_accuracy_normal, epoch_accuracy_average, epoch_loss):
     np.savetxt(f'{current_path}/{mode}_Accuracy_normal.csv',np.array(epoch_accuracy_normal))
@@ -148,65 +189,69 @@ def save_to_csvs(current_path, mode, epoch_accuracy_normal, epoch_accuracy_avera
     np.savetxt(f'{current_path}/{mode}_Loss.csv',np.array(epoch_loss))
 
 if __name__ == "__main__":
-    num_subfolders_in_iterations = len(os.listdir("Iterations"))+1
-    os.mkdir(f"Iterations/Iteration_{num_subfolders_in_iterations}")
-    current_path = f"Iterations/Iteration_{num_subfolders_in_iterations}"
 
     device = torch.device("cuda")
     print("Cuda: ",torch.cuda.get_device_name())
-
-    print("running main ln157")
-
-    DROPOUT_RATE, TRAIN_BATCHSIZE, TEST_BATCHSIZE, K, LR, MOMENTUM, WEIGHT_DECAY  = random_hyperparamter_search(current_path, dropout = [0.3,0.8], #Normal 0.5
-                                                                            train_batchsize = [16,17], #Normal 16: 16 only max exclusive
-                                                                            test_batchsize = [8,9], #Normal 8: 8 only, max exclusive
-                                                                            k = [15,26], #Normal 20: 15 to 25
-                                                                            lr = [0.000001,0.001], #Normal 0.000001: 
-                                                                            momentum = [0.9,0.99], #Normal: 0.9
-                                                                            weight_decay = [1e-5,1e-4]) #Normal: 1e-4
-
-    model = DGCNN(numClass = NUM_CLASS, emb_dims = EMB_DIMS, dropout_rate=DROPOUT_RATE, batch_size = TRAIN_BATCHSIZE, k = K).to(device)
-
-    train_loader = DataLoader(PointCloudDataset(partition='Training', num_points=NUM_POINTS), num_workers=8,
-                            batch_size=TRAIN_BATCHSIZE, shuffle=True, drop_last=True)
-    test_loader = DataLoader(PointCloudDataset(partition='Validation', num_points=NUM_POINTS), num_workers=8,
-                            batch_size=TRAIN_BATCHSIZE, shuffle=True, drop_last=False)
-
-    #Optimizer
-    optimizer = optim.SGD(model.parameters(),lr = LR*100 ,momentum = MOMENTUM, weight_decay = WEIGHT_DECAY) #0.9 normal momentum, LR*100
-    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, EPOCHS, eta_min= LR)
     
-    #Loss function
-    criterion = cal_loss
+    #If training = true, then train, else test
 
-    #Lists to save information such as accuracy and loss for each epoch.
-    best_test_accuracy = 0
+    training = False
+    if training:
+   
+        num_subfolders_in_iterations = len(os.listdir("Iterations"))+1
+        os.mkdir(f"Iterations/Iteration_{num_subfolders_in_iterations}")
+        current_path = f"Iterations/Iteration_{num_subfolders_in_iterations}"
 
-    train_epoch_accuracy_normal = []
-    train_epoch_accuracy_average = []
-    train_epoch_loss = []
+        DROPOUT_RATE, TRAIN_BATCHSIZE, TEST_BATCHSIZE, K, LR, MOMENTUM, WEIGHT_DECAY  = random_hyperparamter_search(current_path, dropout = [0.3,0.8], #Normal 0.5
+                                                                                train_batchsize = [16,17], #Normal 16: 16 only max exclusive
+                                                                                test_batchsize = [8,9], #Normal 8: 8 only, max exclusive
+                                                                                k = [15,26], #Normal 20: 15 to 25
+                                                                                lr = [0.000001,0.001], #Normal 0.000001: 
+                                                                                momentum = [0.9,0.99], #Normal: 0.9
+                                                                                weight_decay = [1e-5,1e-4]) #Normal: 1e-4
 
-    test_epoch_accuracy_normal = []
-    test_epoch_accuracy_average = []
-    test_epoch_loss = []
+        model = DGCNN(numClass = NUM_CLASS, emb_dims = EMB_DIMS, dropout_rate=DROPOUT_RATE, batch_size = TRAIN_BATCHSIZE, k = K).to(device)
 
-    #Go through all epochs
+        train_loader = DataLoader(PointCloudDataset(partition='Training', num_points=NUM_POINTS), num_workers=8,
+                                batch_size=TRAIN_BATCHSIZE, shuffle=True, drop_last=True)
+        test_loader = DataLoader(PointCloudDataset(partition='Validation', num_points=NUM_POINTS), num_workers=8,
+                                batch_size=TRAIN_BATCHSIZE, shuffle=True, drop_last=False)
 
-    for epoch in range(EPOCHS):
-        print("running train ln186")
-        train(current_path, model, epoch, 'Training', train_loader, optimizer, scheduler, criterion, best_test_accuracy,
-                                                                                    train_epoch_accuracy_normal,
-                                                                                    train_epoch_accuracy_average,
-                                                                                    train_epoch_loss)
+        #Optimizer
+        optimizer = optim.SGD(model.parameters(),lr = LR*100 ,momentum = MOMENTUM, weight_decay = WEIGHT_DECAY) #0.9 normal momentum, LR*100
+        scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, EPOCHS, eta_min= LR)
+        
+        #Loss function
+        criterion = cal_loss
 
-        best_test_accuracy = train(current_path, model, epoch, 'Validation', test_loader, optimizer, scheduler, criterion, best_test_accuracy,
-                                                                                                        test_epoch_accuracy_normal,
-                                                                                                        test_epoch_accuracy_average,
-                                                                                                        test_epoch_loss)
+        #Lists to save information such as accuracy and loss for each epoch.
+        best_test_accuracy = 0
 
-        #Saves the accuracy and lost lists into csvs save_to_csvs(mode, epoch_accuracy_normal, epoch_accuracy_average, epoch_loss):
-        save_to_csvs(current_path, 'Train',train_epoch_accuracy_normal, train_epoch_accuracy_average, train_epoch_loss)
-        save_to_csvs(current_path, 'Test',test_epoch_accuracy_normal, test_epoch_accuracy_average, test_epoch_loss)
+        train_epoch_accuracy_normal = []
+        train_epoch_accuracy_average = []
+        train_epoch_loss = []
 
-    #Testing
-    test(model)
+        test_epoch_accuracy_normal = []
+        test_epoch_accuracy_average = []
+        test_epoch_loss = []
+
+        #Go through all epochs
+
+        for epoch in range(EPOCHS):
+            print("running train ln186")
+            train(current_path, model, epoch, 'Training', train_loader, optimizer, scheduler, criterion, best_test_accuracy,
+                                                                                        train_epoch_accuracy_normal,
+                                                                                        train_epoch_accuracy_average,
+                                                                                        train_epoch_loss)
+
+            best_test_accuracy = train(current_path, model, epoch, 'Validation', test_loader, optimizer, scheduler, criterion, best_test_accuracy,
+                                                                                                            test_epoch_accuracy_normal,
+                                                                                                            test_epoch_accuracy_average,
+                                                                                                            test_epoch_loss)
+
+            #Saves the accuracy and lost lists into csvs save_to_csvs(mode, epoch_accuracy_normal, epoch_accuracy_average, epoch_loss):
+            save_to_csvs(current_path, 'Train',train_epoch_accuracy_normal, train_epoch_accuracy_average, train_epoch_loss)
+            save_to_csvs(current_path, 'Test',test_epoch_accuracy_normal, test_epoch_accuracy_average, test_epoch_loss)
+    else:
+        #Testing
+        test()
