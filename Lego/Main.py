@@ -80,8 +80,9 @@ brick_loc_workspace = getLocation(Calibration_bricks)
 
 #Here an image is capture with the 4 bricks on
 image = captureImage(cam_id)
-cv.imshow("calibration bricks", image)
-cv.waitKey()
+
+#cv.imshow("calibration bricks", image)
+#cv.waitKey()
 
 #A blob detection is then used to find the location of the bricks in the image
 found_bricks = BrickDetection.GetBricks(image,verbose=False)
@@ -98,8 +99,10 @@ show_bricks(Real_bricks)
 
 # A image of the bricks is captured
 image = captureImage(cam_id)
-cv.imshow("Bricks to pick up", image)
-cv.waitKey()
+
+#cv.imshow("Bricks to pick up", image)
+#cv.waitKey()
+
 #The location and orientation of the bricks is found from the image
 found_bricks = BrickDetection.GetBricks(image,verbose=False)
 
@@ -154,42 +157,34 @@ RDK.Cam2D_Close()
 #Then it moves to the target location and places the brick down again
 def Assemble(pose_ref,order,at_position):
     for i, brick in enumerate(order):
-        #Home
-        #pose_ref.setPos([520,470,280])
-        #robot.MoveJ(pose_ref)   
-
-        #Rotation
+        #Rotation and move above pickup location
         pose_ref = TxyzRxyz_2_Pose([brick.pickup_position[0],brick.pickup_position[1],280,math.radians(-180),math.radians(0),math.radians(brick.slope)])
         robot.MoveJ(pose_ref)   
         
         #Pickup Object
         pose_ref.setPos(brick.pickup_position)
-        robot.MoveJ(pose_ref)
+        robot.MoveL(pose_ref)
         tool.AttachClosest()
 
         #Home
         pose_ref.setPos([brick.pickup_position[0],brick.pickup_position[1],280])
         robot.MoveJ(pose_ref)
 
-        #Above target
-        pose_ref.setPos([at_position[0],at_position[1],300])
-        robot.MoveJ(pose_ref)
-
-        #Rotation
+        #Above target and Rotation
         pose_ref = TxyzRxyz_2_Pose([at_position[0],at_position[1],300,math.radians(-180),math.radians(0),0])
         robot.MoveJ(pose_ref)   
         
         #Place Object
         pose_ref.setPos([at_position[0],at_position[1],25*i])
-        robot.MoveJ(pose_ref)
+        robot.MoveL(pose_ref)
         tool.DetachAll()
         
         #Above target
         pose_ref.setPos([at_position[0],at_position[1],300])
-        robot.MoveJ(pose_ref)
+        robot.MoveL(pose_ref)
 
-Assemble(pose_ref, bartOrder,[240,230])
-Assemble(pose_ref, margeOrder,[120,230])
+Assemble(pose_ref, bartOrder,[240,430])
+Assemble(pose_ref, margeOrder,[120,430])
 
 
 if cv.waitKey():
