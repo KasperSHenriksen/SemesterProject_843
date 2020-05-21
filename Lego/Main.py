@@ -144,10 +144,11 @@ marge = ["Yellow","Green","Green","Yellow","Blue"]
 bartOrder = GetOrder(bart,found_bricks)
 margeOrder = GetOrder(marge,found_bricks)
 
-
-
+#Sets the frame of the robot to the workspace
 frame = RDK.Item('WorkSpace', ITEM_TYPE_FRAME)
 robot.setPoseFrame(frame)
+
+
 pose_ref = robot.Pose()
 
 RDK.Cam2D_Close()
@@ -173,7 +174,7 @@ def Assemble(pose_ref,order,at_position):
         #Above target and Rotation
         pose_ref = TxyzRxyz_2_Pose([at_position[0],at_position[1],300,math.radians(-180),math.radians(0),0])
         robot.MoveJ(pose_ref)   
-        
+
         #Place Object
         pose_ref.setPos([at_position[0],at_position[1],25*i])
         robot.MoveL(pose_ref)

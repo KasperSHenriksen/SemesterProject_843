@@ -6,6 +6,8 @@ import numpy as np
 def calibrate(brick_loc_image,brick_loc_workspace):
     #['YellowCalib','RedCalib','BlueCalib','GreenCalib']    
     
+    # Adds the brick coordinates in correct order according to the colors
+    # This is done to make sure that the correspond to the correct position in workspace
     for brick in brick_loc_image:
         if brick.color == "Yellow":
             x1 = brick.pickup_position[0]
@@ -34,6 +36,7 @@ def calibrate(brick_loc_image,brick_loc_workspace):
     x4c = brick_loc_workspace[3].Cols()[3][0]
     y4c = brick_loc_workspace[3].Cols()[3][1]
     
+    #Here the matrix with equations is setup
     a = np.array(
         [[x1,0,x2,0,x3,0,x4,0],
         [y1,0,y2,0,y3,0,y4,0],
@@ -46,10 +49,11 @@ def calibrate(brick_loc_image,brick_loc_workspace):
 
     a = np.transpose(a)
 
+    #Here the other site of the equations is setup
     b = [x1c,y1c,x2c,y2c,x3c,y3c,x4c,y4c]
 
+    #Here the array of d is found by solving the linear system
     d=np.linalg.solve(a,b)
 
-    print("Correct calibration results: ",np.allclose(np.dot(a, d), b))
 
     return d
