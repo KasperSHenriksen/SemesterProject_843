@@ -39,6 +39,8 @@ def shuffle(pathdir):
                 #combined_label_list.append(np.eye(2,dtype=np.int64)[index]) #Hot encoding
                 label = np.array(index,dtype=np.int64)
                 combined_label_list.append(np.array(label))
+                print(f"Group: {group} and index: {index}")
+                break
 
         temp_zip = list(zip(combined_pointcloud_list,combined_label_list))
         random.shuffle(temp_zip)

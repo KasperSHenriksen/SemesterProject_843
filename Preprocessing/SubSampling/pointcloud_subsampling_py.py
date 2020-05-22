@@ -45,10 +45,10 @@ def delete_pointclouds_below_limit(main_folder,limit):
         if len(old_f)+1 < limit:
             os.remove(file)
 
-main_folder = '/home/kasper/Desktop/test_dataset/Test1'
+main_folder = '/home/kasper/Desktop/test_dataset/Extra'
 os.chdir('/snap/bin')
 
-subsampling_algorithm(main_folder,'SPATIAL',0.035)
+subsampling_algorithm(main_folder,'SPATIAL',0.08)
 subsampling_algorithm(main_folder,'RANDOM',1024)
 
 remove_label_column(main_folder)

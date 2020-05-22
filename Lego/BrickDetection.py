@@ -2,7 +2,6 @@ from robolink import *    # API to communicate with RoboDK
 from robodk import *      # robodk robotics toolbox
 import cv2 as cv
 import numpy as np
-from matplotlib import pyplot as plt
 import argparse
 from numpy import loadtxt
 from numpy import genfromtxt
@@ -181,22 +180,12 @@ def GetBricks(image1,verbose):
     """
 
     #Color Detection
-<<<<<<< HEAD
     hsv_img = cv.cvtColor(image1, cv.COLOR_BGR2HSV) #Converts BGR Image to HSV Image
     red_hsv_color = DetectColor(hsv_img,lower_boundary = np.array([-15,90,220]), upper_boundary = np.array([15,255,255])) #Red Detected 
     green_hsv_color = DetectColor(hsv_img,lower_boundary = np.array([138/2-15,90,220]), upper_boundary = np.array([138/2+15,255,255])) #Green Detected
     yellow_hsv_color = DetectColor(hsv_img,lower_boundary = np.array([57/2-15,90,220]), upper_boundary = np.array([59/2+15,255,255])) #Yellow Detected
     blue_hsv_color = DetectColor(hsv_img,lower_boundary = np.array([239/2-15,90,220]), upper_boundary = np.array([239/2+15,255,255])) #Blue Detected
     detected_color_dict = {"Red":red_hsv_color, "Green":green_hsv_color, "Yellow":yellow_hsv_color, "Blue":blue_hsv_color} #Dictionary of colored images
-=======
-    hsv_img = cv.cvtColor(image1, cv.COLOR_BGR2HSV)
-    red_hsv_color = DetectColor(hsv_img,lower_boundary = np.array([-15,90,220]), upper_boundary = np.array([15,255,255]))
-    green_hsv_color = DetectColor(hsv_img,lower_boundary = np.array([138/2-15,90,220]), upper_boundary = np.array([138/2+15,255,255]))
-    yellow_hsv_color = DetectColor(hsv_img,lower_boundary = np.array([57/2-15,90,220]), upper_boundary = np.array([59/2+15,255,255]))
-    blue_hsv_color = DetectColor(hsv_img,lower_boundary = np.array([239/2-15,90,220]), upper_boundary = np.array([239/2+15,255,255]))
-    cv.imshow("test",blue_hsv_color)
-    detected_color_dict = {"Red":red_hsv_color, "Green":green_hsv_color, "Yellow":yellow_hsv_color, "Blue":blue_hsv_color}
->>>>>>> 181e914a0ec02ca4a2cfde06fe806750ed1b5aa6
 
 
     #Blob Detection & Get Bricks
