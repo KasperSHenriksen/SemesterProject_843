@@ -153,7 +153,7 @@ def load_data3(partition):
             return data, labels
     
     if(partition == 'Testing'):
-        with h5py.File(f'{DATA_DIR}/test_pointcloud_hdf5.h5','r') as hdf: #test_pointcloud_hdf5.h5
+        with h5py.File(f'{DATA_DIR}/test_pointcloud_hdf5_v3.h5','r') as hdf: #test_pointcloud_hdf5.h5
             print(hdf.get(f'{partition}')) #partiotion
             print(hdf.get(f'{partition}/Labels')) #partition
             print(hdf.get(f'{partition}/PointClouds')) #partion

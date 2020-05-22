@@ -131,15 +131,14 @@ def test():
     # correct_labels = []
     
     path = r"E:\OneDrive\Aalborg Universitet\VGIS8 - Documents\Project\Hyperparameters iterations\Moaaz"
-    #interationFolders = os.listdir(path)
-    interationFolders = ["Iteration (30)"]
+    interationFolders = os.listdir(path)
     # #Try to load models
     # model = DGCNN(args).to(device)
     # model = nn.DataParallel(model)
     # model.load_state_dict(torch.load(args.model_path))
     # model = model.eval()
-    start_time = time.time()
     for interationFolder in interationFolders:
+        
         print(interationFolder)
         modelPath = fr"{path}\{interationFolder}\model.t7"
         # load model
@@ -147,6 +146,7 @@ def test():
         model = torch.load(modelPath)
         model.eval()
 
+        start_time = time.time()
         predicted_labels = []
         correct_labels = []
         with torch.no_grad():
@@ -180,7 +180,6 @@ def test():
         stop_time = time.time()
         total_time = stop_time - start_time
         print(f"Time taken: {total_time}")
-        break
         np.savetxt(fr'{path}\{interationFolder}\RealTest.csv',np.array([test_acc,total_time,tn,fp,fn,tp]))
 
 def save_to_csvs(current_path, mode, epoch_accuracy_normal, epoch_accuracy_average, epoch_loss):
