@@ -1,0 +1,7 @@
+dropout_rate: 0.5527550955991822
+train_batchsize: 16
+test_batchsize: 8
+k: 20
+lr: 6.51349094627281e-05
+momentum: 0.9028960436056166
+weight_decay: 5.492042796040581e-05
