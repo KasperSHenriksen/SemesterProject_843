@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import csv
 from tqdm import tqdm
-
+import time
 
 def get_filepaths(main_folder):
     folders = set(os.listdir(f'{main_folder}'))
@@ -18,9 +18,10 @@ def get_filepaths(main_folder):
 def subsampling_algorithm(main_folder,algorithm,parameter_value):
     non_subsampled_filepaths = get_filepaths(main_folder)
 
+
     for filepath in non_subsampled_filepaths:
-        #os.system(f'CloudCompare -SILENT -O {filepath} -C_EXPORT_FMT ASC -EXT CSV -PREC 6 -SEP COMMA -SS {algorithm} {parameter_value}')
-        os.system(f'cloudcompare.CloudCompare -SILENT -O {filepath} -C_EXPORT_FMT ASC -EXT CSV -PREC 6 -SEP COMMA -SS {algorithm} {parameter_value}')
+        os.system(f'CloudCompare -SILENT -O {filepath} -C_EXPORT_FMT ASC -EXT CSV -PREC 6 -SEP COMMA -SS {algorithm} {parameter_value}')
+        #os.system(f'cloudcompare.CloudCompare -SILENT -O {filepath} -C_EXPORT_FMT ASC -EXT CSV -PREC 6 -SEP COMMA -SS {algorithm} {parameter_value}')
         os.remove(filepath)
 
 
@@ -45,11 +46,23 @@ def delete_pointclouds_below_limit(main_folder,limit):
         if len(old_f)+1 < limit:
             os.remove(file)
 
-main_folder = '/home/kasper/Desktop/test_dataset/Extra'
-os.chdir('/snap/bin')
-
-subsampling_algorithm(main_folder,'SPATIAL',0.08)
-subsampling_algorithm(main_folder,'RANDOM',1024)
+main_folder = input('Path to data: ')
+#main_folder = '/home/kasper/Desktop/Test_data/old_unity2'
+cloud_compare_folder = input('Path to CloudCompare: ')
+os.chdir(cloud_compare_folder)
+#os.chdir('/snap/bin')
 
 remove_label_column(main_folder)
+
+start1 = time.time()
+subsampling_algorithm(main_folder,'SPATIAL',0.08)
+stop1 = time.time()
+
+start2 = time.time()
+subsampling_algorithm(main_folder,'RANDOM',1024)
+stop2 = time.time()
+
+print('Space:',stop1-start1)
+print('Random:',stop2-start2)
+#remove_label_column(main_folder)
 delete_pointclouds_below_limit(main_folder,1024)

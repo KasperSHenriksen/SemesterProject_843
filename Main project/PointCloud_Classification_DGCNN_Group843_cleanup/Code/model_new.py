@@ -1,7 +1,7 @@
 #Archiecture of DGCNN: https://github.com/WangYueFt/dgcnn/blob/master/pytorch/model.py
 import torch
 import torch.nn as nn
-import torch.nn.functional as F 
+import torch.nn.functional as F
 
 def knn(data, k):
     inner = -2*torch.matmul(data.transpose(2,1),data)
@@ -41,6 +41,20 @@ def get_graph_feature(data, k=20, idx=None):
 
     return feature
 
+class EdgeConv(nn.Module):
+    def __init__(self, k, channels_in, channels_out):
+        super().__init__()
+
+        self.k = k
+
+        self.conv1 = nn.Sequential(nn.Conv2d(channels_in,channels_out,kernel_size=1,bias=False),
+                                    nn.BatchNorm2d(channels_out),
+                                    nn.LeakyReLU(negative_slope=0.2))
+
+    def forward(self, data):
+        data = get_graph_feature(data, k=self.k)
+        data = self.conv1(data)
+        return data.max(dim=-1, keepdim=False)[0]
 
 
 class DGCNN(nn.Module):
@@ -54,35 +68,17 @@ class DGCNN(nn.Module):
         self.k = k
 
         #Conv Layers
-        self.conv1 = nn.Sequential(nn.Conv2d(6,64,kernel_size=1,bias=False),
-                                    nn.BatchNorm2d(64), 
-                                    nn.LeakyReLU(negative_slope=0.2))
+        self.edge_conv1 = EdgeConv(k, channels_in = 6, channels_out = 64)
+        self.edge_conv2 = EdgeConv(k, channels_in = 64*2, channels_out = 64)
+        self.edge_conv3 = EdgeConv(k, channels_in = 64*2, channels_out = 128)
+        self.edge_conv4 = EdgeConv(k, channels_in = 128*2, channels_out = 256)
 
-
-        self.conv2 = nn.Sequential(nn.Conv2d(64*2,64,kernel_size=1,bias=False),
-                                    nn.BatchNorm2d(64),
-                                    nn.LeakyReLU(negative_slope=0.2))
-
-        self.conv3 = nn.Sequential(nn.Conv2d(64*2,128,kernel_size=1,bias=False),
-                                    nn.BatchNorm2d(128),
-                                    nn.LeakyReLU(negative_slope=0.2))
-
-        self.conv4 = nn.Sequential(nn.Conv2d(128*2,256,kernel_size=1,bias=False),
-                                    nn.BatchNorm2d(256),
-                                    nn.LeakyReLU(negative_slope=0.2))
-
-        self.conv5 = nn.Sequential(nn.Conv1d(512,self.emb_dims,kernel_size=1,bias=False),
-                                    nn.BatchNorm1d(self.emb_dims),
-                                    nn.LeakyReLU(negative_slope=0.2))
+        self.conv1 = nn.Sequential(nn.Conv1d(512,self.emb_dims,kernel_size=1,bias=False), nn.BatchNorm1d(self.emb_dims), nn.LeakyReLU(negative_slope=0.2))
 
         #Fully Connected layers| Linear == Fully connected
-        self.fc1 = nn.Linear(self.emb_dims*2,512,bias=False)
-        self.fc2 = nn.Linear(512,256)
+        self.fc1 = nn.Sequential(nn.Linear(self.emb_dims*2,512,bias=False), nn.BatchNorm1d(512), nn.LeakyReLU(negative_slope=0.2))
+        self.fc2 = nn.Sequential(nn.Linear(512,256), nn.BatchNorm1d(256), nn.LeakyReLU(negative_slope=0.2))
         self.fc3 = nn.Linear(256,numClass)
-
-        #BatchNorm layers
-        self.bn1 = nn.BatchNorm1d(512) #Note: bn6 in their code
-        self.bn2 = nn.BatchNorm1d(256) #Note: bn2 in their code
 
         #Dropout Layers
         self.dp1 = nn.Dropout(self.dropout_rate)
@@ -94,40 +90,31 @@ class DGCNN(nn.Module):
         batch_size = data.size(0)
 
         #EdgeConv1
-        data = get_graph_feature(data, k=self.k)   
-        data = self.conv1(data)                     
-        data1= data.max(dim=-1, keepdim=False)[0]  
+        data1 = self.edge_conv1(data)
 
         #EdgeConv2
-        data = get_graph_feature(data1, k=self.k)   
-        data = self.conv2(data)
-        data2= data.max(dim=-1, keepdim=False)[0]
+        data2= self.edge_conv2(data1)
 
         #EdgeConv3
-        data = get_graph_feature(data2, k=self.k)
-        data = self.conv3(data)
-        data3= data.max(dim=-1, keepdim=False)[0]
+        data3= self.edge_conv3(data2)
 
         #EdgeConv4
-        data = get_graph_feature(data3, k=self.k)
-        data = self.conv4(data)
-        data4= data.max(dim=-1, keepdim=False)[0]
+        data4= self.edge_conv4(data3)
 
         #concatenating data1,2,3,4 together
         data = torch.cat((data1, data2, data3, data4), dim=1)
 
         ## max pool here
-        data = self.conv5(data)
+        data = self.conv1(data)
         data5 = F.adaptive_max_pool1d(data,1).view(batch_size, -1)
         data6 = F.adaptive_avg_pool1d(data,1).view(batch_size, -1)
         data= torch.cat((data5,data6),1)
 
-
         #Generating the classification score
-        data = F.leaky_relu(self.bn1(self.fc1(data)), negative_slope=0.2)
+        data = self.fc1(data)
         data = self.dp1(data)
 
-        data = F.leaky_relu(self.bn2(self.fc2(data)), negative_slope=0.2)
+        data = self.fc2(data)
         data = self.dp2(data)
 
         data = self.fc3(data)

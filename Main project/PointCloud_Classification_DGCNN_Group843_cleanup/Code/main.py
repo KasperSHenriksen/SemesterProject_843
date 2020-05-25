@@ -19,6 +19,9 @@ NUM_POINTS = 1024
 EPOCHS = 50
 
 def random_hyperparamter_search(current_path, dropout, train_batchsize, valid_batchsize, k, lr, momentum, weight_decay):
+    """
+    Returns dictionary of random found hyperparameters based on given input.
+    """
     dropout = np.random.uniform(dropout[0],dropout[1])
     train_batchsize = np.random.randint(train_batchsize[0],train_batchsize[1])
     valid_batchsize = np.random.randint(valid_batchsize[0],valid_batchsize[1])
@@ -46,11 +49,18 @@ def random_hyperparamter_search(current_path, dropout, train_batchsize, valid_ba
 
 
 def cal_loss(pred, label):
+    """
+    Calculates the loss using cross_entropy (Log-softmax + log-likelihood loss)
+    """
     label = label.contiguous().view(-1)
     loss = F.cross_entropy(pred, label, reduction='mean')
     return loss
 
 def calculate_results(correct_labels, predicted_labels,loss_sum, results, mode):
+    """
+    Calculates normal, average and loss result based upon correct and predicted labels. Moreover, this information is saved
+    unto the dictionaries containing results.
+    """
     #Concats
     predicted_labels = np.concatenate(predicted_labels)
     correct_labels = np.concatenate(correct_labels)
@@ -68,17 +78,27 @@ def calculate_results(correct_labels, predicted_labels,loss_sum, results, mode):
     return normal_accuracy
 
 def save_to_csvs(current_path, mode, results):
+    """
+    Saves results unto CSVs
+    """
     np.savetxt(f'{current_path}/{mode}_Accuracy_normal.csv',np.array(results.get('normal')))
     np.savetxt(f'{current_path}/{mode}_Accuracy_average.csv',np.array(results.get('average')))
     np.savetxt(f'{current_path}/{mode}_Loss.csv',np.array(results.get('loss')))
 
 def create_folder_and_get_path():
+    """
+    Creates a new folder based on the number of folders found. Moreover, it returns the path the newly created folder.
+    """
     num_subfolders_in_iterations = len(os.listdir("Iterations"))+1
     os.mkdir(f"Iterations/Iteration_{num_subfolders_in_iterations}")
     current_path = f"Iterations/Iteration_{num_subfolders_in_iterations}"
     return current_path
 
 def save_highest_validation(normal_accuracy, best_valid_accuracy):
+    """
+    Checks if a new validation accuracy is better than the current best validation accuracy.
+    If true, it saves the current model
+    """
     if normal_accuracy > best_valid_accuracy:
         best_valid_accuracy = normal_accuracy
         print('[INFO] Saving Model...')
@@ -90,6 +110,9 @@ def save_highest_validation(normal_accuracy, best_valid_accuracy):
 
 #Training
 def train(current_path, model, epoch, mode, dataloader, optimizer, scheduler, criterion, best_valid_accuracy, results):
+    """
+    Training and validation
+    """
     print(f'[INFO] Epoch: {epoch}/{EPOCHS} | {mode}...')
     #Selecting which mode to run the model (Training or Testing)
     if mode == 'Training':
@@ -138,53 +161,61 @@ def train(current_path, model, epoch, mode, dataloader, optimizer, scheduler, cr
 
 #Testing
 def test():
+    """
+    Testing
+    """
     TEST_BATCHSIZE = 16
-    #NUM_POINTS = 1024
 
     test_loader = DataLoader(PointCloudDataset(partition='Testing', num_points=NUM_POINTS), batch_size=TEST_BATCHSIZE, shuffle=False, drop_last=False)
 
-    path = r"E:\OneDrive\Aalborg Universitet\VGIS8 - Documents\Project\Hyperparameters iterations\Moaaz"
-    interationFolders = os.listdir(path)
-    for interationFolder in interationFolders:
+    #path = r"E:\OneDrive\Aalborg Universitet\VGIS8 - Documents\Project\Hyperparameters iterations\Moaaz"
+    BASE_PATH = os.path.dirname(os.path.abspath(__file__))
+    INTERACTION_ID = input("Interaction folder ID (0-n): ")
+    folder_path = f'{BASE_PATH}/Iterations/Iteration_{INTERACTION_ID}'
+    os.mkdir(f'{folder_path}/incorrect_predictions')
 
-        print(interationFolder)
-        modelPath = fr"{path}\{interationFolder}\model.t7"
-        # load model
+    model_path = f'{folder_path}/model.t7'
 
-        model = torch.load(modelPath)
-        model.eval()
+    # load model
+    model = torch.load(model_path)
+    model.eval()
 
-        start_time = time.time()
-        predicted_labels = []
-        correct_labels = []
-        with torch.no_grad():
-            for data, label in test_loader:
-                data = data.to(device)
-                label = label.to(device).squeeze()
+    start_time = time.time()
+    predicted_labels = []
+    correct_labels = []
+    
+    with torch.no_grad():
+        for data, label in tqdm(test_loader):
+            data = data.to(device)
+            labels = label.to(device).squeeze()
 
-                data = data.permute(0,2,1)
-                batch_size = data.size()[0]
+            data = data.permute(0,2,1)
+            batch_size = data.size()[0]
 
-                output = model(data)
-                preds = output.max(dim=1)[1]
-                correct_labels.append(label.cpu().numpy())
-                predicted_labels.append(preds.detach().cpu().numpy())
+            output = model(data)
+            preds = output.max(dim=1)[1]
+            correct_labels.append(labels.cpu().numpy())
+            predicted_labels.append(preds.detach().cpu().numpy())
 
-            correct_labels = np.concatenate(correct_labels)
-            predicted_labels = np.concatenate(predicted_labels)
-            #print(f'Correct: {correct_labels}')
-            #print(f'Predicted: {predicted_labels}')
-            test_acc = metrics.accuracy_score(correct_labels, predicted_labels)
-            print(f'Test Accuracy = {test_acc}')
+            
+            for i in range(len(labels)):
+                if labels[i] != preds[i]:
+                    temp_data = data[i].permute(1,0)
+    
+                    num_csvs = len(os.listdir(f'{folder_path}/incorrect_predictions'))
+                    np.savetxt(f'{folder_path}/incorrect_predictions/prediction{labels[i]}_{num_csvs}.csv',temp_data.cpu().numpy())
 
-            #print("Confusion Matrix:",sklean_confusion_matrix(correct_labels,predicted_labels))
-            tn, fp, fn, tp = sklean_confusion_matrix(correct_labels,predicted_labels).ravel()
-            #print(tn, fp, fn, tp)
 
-        stop_time = time.time()
-        total_time = stop_time - start_time
-        print(f"Time taken: {total_time}")
-        np.savetxt(fr'{path}\{interationFolder}\RealTest.csv',np.array([test_acc,total_time,tn,fp,fn,tp]))
+        correct_labels = np.concatenate(correct_labels)
+        predicted_labels = np.concatenate(predicted_labels)
+        test_acc = metrics.accuracy_score(correct_labels, predicted_labels)
+        print(f'Test Accuracy = {test_acc}')
+
+        tn, fp, fn, tp = sklean_confusion_matrix(correct_labels,predicted_labels).ravel()
+
+    stop_time = time.time()
+    total_time = stop_time - start_time
+    np.savetxt(fr'{folder_path}/RealTest.csv',np.array([test_acc,total_time,tn,fp,fn,tp,correct_labels,predicted_labels]))
 
 if __name__ == "__main__":
     #Select Cuda
